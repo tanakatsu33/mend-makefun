@@ -376,8 +376,8 @@ function unifiedSections(lines: string[]): Section[] {
     }
     if (inHeader && sec !== null) {
       if (l.startsWith('--- ')) throw parseError(i + 2);
-      if (l.startsWith('rename from ')) sec.renameFrom = l.slice('rename from '.length).trim();
-      else if (l.startsWith('rename to ')) sec.renameTo = l.slice('rename to '.length).trim();
+      if (l.startsWith('rename from ')) sec.renameFrom = l.slice('rename from '.length);
+      else if (l.startsWith('rename to ')) sec.renameTo = l.slice('rename to '.length);
       else if (l.startsWith('new file mode')) sec.create = true;
       else if (l.startsWith('deleted file mode')) sec.del = true;
     }
@@ -579,7 +579,7 @@ function v4aEdits(lines: string[]): Edit[] {
     const l = lines[i]!;
     const h = heads.find(([prefix]) => l.startsWith(prefix));
     if (h !== undefined) {
-      cur = { kind: h[1], path: l.slice(h[0].length).trim(), line: i + 1, body: [] };
+      cur = { kind: h[1], path: l.slice(h[0].length).replace(/^ +| +$/g, ''), line: i + 1, body: [] };
       secs.push(cur);
       continue;
     }
@@ -620,7 +620,7 @@ function v4aEdits(lines: string[]): Edit[] {
     let k = 0;
     let move: string | null = null;
     if (s.body.length > 0 && s.body[0]!.text.startsWith('*** Move to: ')) {
-      move = s.body[0]!.text.slice('*** Move to: '.length).trim();
+      move = s.body[0]!.text.slice('*** Move to: '.length).replace(/^ +| +$/g, '');
       k = 1;
     }
     const chunks: Chunk[] = [];
@@ -628,7 +628,7 @@ function v4aEdits(lines: string[]): Edit[] {
     for (; k < s.body.length; k++) {
       const { text: t, line } = s.body[k]!;
       if (t.startsWith('@@')) {
-        const anchor = t.slice(2).trim();
+        const anchor = t.slice(2).replace(/^ +| +$/g, '');
         open = { anchor: anchor === '' ? null : anchor, body: [], eof: false };
         chunks.push(open);
       } else if (t === '*** End of File') {
