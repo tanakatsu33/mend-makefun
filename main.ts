@@ -292,8 +292,8 @@ function unifiedEdits(lines: string[], strict: boolean): Edit[] {
   let i = 0;
   while (i < lines.length) {
     const l = lines[i]!;
-    if (l.startsWith('diff --git ')) {
-      const g = parseGit(l);
+    if (/^diff --git(?:\s|$)/.test(l)) {
+      const g = l.startsWith('diff --git ') ? parseGit(l) : null;
       if (g === null) throw parseErr(i + 1);
       cur = fresh();
       cur.git = g;
@@ -357,6 +357,7 @@ function unifiedEdit(s: USection, strict: boolean): Edit {
   if (creation) {
     const p = newP ?? '';
     return (tree) => {
+      if (oldP !== null && !safe(oldP)) throw new Fail('unsafe', oldP);
       if (!safe(p)) throw new Fail('unsafe', p);
       if (tree.get(p) !== null) throw new Fail('exists', p);
       const out: string[] = [];
@@ -375,6 +376,7 @@ function unifiedEdit(s: USection, strict: boolean): Edit {
     const p = oldP!;
     return (tree) => {
       if (!safe(p)) throw new Fail('unsafe', p);
+      if (newP !== null && !safe(newP)) throw new Fail('unsafe', newP);
       if (tree.get(p) === null) throw new Fail('missing', p);
       tree.now.set(p, null);
     };
@@ -566,7 +568,7 @@ function v4aEdits(lines: string[], strict: boolean): Edit[] {
           const a = b.slice(2).replace(/^ +/, '').replace(/ +$/, '');
           open = { anchor: a === '' ? null : a, body: [], eof: false };
           chunks.push(open);
-        } else if (b.trim() === '*** End of File') {
+        } else if (b === '*** End of File') {
           if (open === null) throw parseErr(j + 1);
           open.eof = true;
           open = null;
